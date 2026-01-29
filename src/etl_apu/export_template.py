@@ -43,22 +43,32 @@ class TemplateMapping:
     Ajustar según el template real.
     """
     # Datos del rubro
-    codigo_cell: str = "B4"
-    descripcion_cell: str = "B5"
-    unidad_cell: str = "B6"
+    codigo_cell: str = "B1"
+    descripcion_cell: str = "B2"
+    unidad_cell: str = "B3"
 
-    # Tabla de recursos
-    table_start_row: int = 10  # Primera fila de datos de la tabla
-    col_categoria: str = "A"   # Columna: MATERIALES/EQUIPO/etc
-    col_nombre: str = "B"      # Columna: Nombre del recurso
-    col_unidad: str = "C"      # Columna: Unidad
-    col_cantidad: str = "D"    # Columna: Cantidad
+    # Sección EQUIPOS (6 columnas: DESCRIPCION, CANTIDAD, TARIFA, COSTO HORA, RENDIMIENTO, COSTO)
+    equipos_start_row: int = 8
+    equipos_cols: Tuple[str, ...] = ("A", "B", "C", "D", "E", "F")
+    equipos_subtotal_row: int = 11
 
-    # Filas por categoría (si el template tiene bloques separados)
-    materiales_start_row: Optional[int] = None
-    equipo_start_row: Optional[int] = None
-    mano_obra_start_row: Optional[int] = None
-    transporte_start_row: Optional[int] = None
+    # Sección MANO DE OBRA (6 columnas: DESCRIPCION, CANTIDAD, JORNAL/HR, COSTO HORA, RENDIMIENTO, COSTO)
+    mano_obra_start_row: int = 16
+    mano_obra_cols: Tuple[str, ...] = ("A", "B", "C", "D", "E", "F")
+    mano_obra_subtotal_row: int = 19
+
+    # Sección MATERIALES (5 columnas: DESCRIPCION, UNIDAD, CANTIDAD, P. UNITARIO, COSTO)
+    materiales_start_row: int = 24
+    materiales_cols: Tuple[str, ...] = ("A", "B", "C", "D", "E")
+    materiales_subtotal_row: int = 27
+
+    # Sección TRANSPORTE (6 columnas: DESCRIPCION, CANTIDAD, TARIFA, COSTO HORA, RENDIMIENTO, COSTO)
+    transporte_start_row: int = 32
+    transporte_cols: Tuple[str, ...] = ("A", "B", "C", "D", "E", "F")
+    transporte_subtotal_row: int = 35
+
+    # Filas por defecto por categoría (3 filas de recursos)
+    default_rows_per_category: int = 3
 
     # Observaciones
     observaciones_cell: Optional[str] = None
@@ -327,9 +337,10 @@ class TemplateExporter:
 
     def _write_recursos(self, sheet, recursos: List[Dict]) -> int:
         """
-        Escribe recursos en la tabla del template.
+        Escribe recursos en las secciones del template según categoría.
 
-        Inserta filas dinámicamente si es necesario.
+        Cada categoría se escribe en su sección específica del template.
+        Inserta filas dinámicamente si hay más recursos que filas disponibles.
 
         Args:
             sheet: Hoja de Excel
@@ -342,39 +353,129 @@ class TemplateExporter:
             return 0
 
         filas_insertadas = 0
-        current_row = self.mapping.table_start_row
 
         # Agrupar por categoría
         recursos_por_categoria = self._agrupar_recursos_por_categoria(recursos)
 
-        # Orden de categorías
-        categorias_orden = ["MATERIALES", "EQUIPO", "MANO_OBRA", "TRANSPORTE"]
+        # Mapeo de categorías a configuración
+        categoria_config = {
+            "EQUIPO": {
+                "start_row": self.mapping.equipos_start_row,
+                "cols": self.mapping.equipos_cols,
+                "subtotal_row": self.mapping.equipos_subtotal_row,
+            },
+            "MANO_OBRA": {
+                "start_row": self.mapping.mano_obra_start_row,
+                "cols": self.mapping.mano_obra_cols,
+                "subtotal_row": self.mapping.mano_obra_subtotal_row,
+            },
+            "MATERIALES": {
+                "start_row": self.mapping.materiales_start_row,
+                "cols": self.mapping.materiales_cols,
+                "subtotal_row": self.mapping.materiales_subtotal_row,
+            },
+            "TRANSPORTE": {
+                "start_row": self.mapping.transporte_start_row,
+                "cols": self.mapping.transporte_cols,
+                "subtotal_row": self.mapping.transporte_subtotal_row,
+            },
+        }
 
-        for categoria in categorias_orden:
+        # Procesar cada categoría
+        for categoria, config in categoria_config.items():
             if categoria not in recursos_por_categoria:
                 continue
 
             recursos_cat = recursos_por_categoria[categoria]
 
-            for recurso in recursos_cat:
-                # Escribir categoría
-                sheet[f"{self.mapping.col_categoria}{current_row}"] = categoria
+            # Escribir recursos de esta categoría
+            inserted = self._write_categoria_recursos(
+                sheet=sheet,
+                recursos=recursos_cat,
+                categoria=categoria,
+                start_row=config["start_row"],
+                cols=config["cols"],
+                subtotal_row=config["subtotal_row"]
+            )
 
-                # Escribir nombre
-                sheet[f"{self.mapping.col_nombre}{current_row}"] = \
-                    recurso.get("nombre", "")
+            filas_insertadas += inserted
 
-                # Escribir unidad
-                if "unidad" in recurso and recurso["unidad"]:
-                    sheet[f"{self.mapping.col_unidad}{current_row}"] = \
-                        recurso["unidad"]
+        return filas_insertadas
 
-                # Escribir cantidad
-                if "cantidad" in recurso and recurso["cantidad"]:
-                    sheet[f"{self.mapping.col_cantidad}{current_row}"] = \
-                        recurso["cantidad"]
+    def _write_categoria_recursos(
+        self,
+        sheet,
+        recursos: List[Dict],
+        categoria: str,
+        start_row: int,
+        cols: Tuple[str, ...],
+        subtotal_row: int
+    ) -> int:
+        """
+        Escribe recursos de una categoría específica en su sección.
 
-                current_row += 1
+        Args:
+            sheet: Hoja de Excel
+            recursos: Lista de recursos de la categoría
+            categoria: Nombre de la categoría
+            start_row: Fila inicial de datos
+            cols: Tupla de letras de columnas
+            subtotal_row: Fila del subtotal
+
+        Returns:
+            Número de filas insertadas
+        """
+        if not recursos:
+            return 0
+
+        filas_insertadas = 0
+        filas_disponibles = subtotal_row - start_row
+
+        # Si necesitamos más filas, insertar antes del subtotal
+        if len(recursos) > filas_disponibles:
+            filas_a_insertar = len(recursos) - filas_disponibles
+
+            # Insertar filas antes del subtotal
+            sheet.insert_rows(subtotal_row, filas_a_insertar)
+
+            # Copiar formato de la fila base (última fila de recursos)
+            fila_base = subtotal_row - 1
+            for i in range(filas_a_insertar):
+                nueva_fila = subtotal_row + i
+                for col in cols:
+                    cell_base = sheet[f"{col}{fila_base}"]
+                    cell_nueva = sheet[f"{col}{nueva_fila}"]
+
+                    # Copiar estilos
+                    if cell_base.has_style:
+                        cell_nueva.font = copy(cell_base.font)
+                        cell_nueva.border = copy(cell_base.border)
+                        cell_nueva.fill = copy(cell_base.fill)
+                        cell_nueva.number_format = copy(cell_base.number_format)
+                        cell_nueva.alignment = copy(cell_base.alignment)
+
+            filas_insertadas = filas_a_insertar
+
+        # Escribir recursos
+        for idx, recurso in enumerate(recursos):
+            current_row = start_row + idx
+
+            # Columna A: DESCRIPCION (siempre)
+            sheet[f"{cols[0]}{current_row}"] = recurso.get("nombre", "")
+
+            # Las siguientes columnas dependen de la categoría
+            if categoria == "MATERIALES":
+                # MATERIALES: DESCRIPCION | UNIDAD | CANTIDAD | P. UNITARIO | COSTO
+                if len(cols) >= 2:
+                    sheet[f"{cols[1]}{current_row}"] = recurso.get("unidad", "")
+                if len(cols) >= 3:
+                    sheet[f"{cols[2]}{current_row}"] = recurso.get("cantidad", "")
+                # P. UNITARIO y COSTO pueden dejarse en blanco o calcularse
+            else:
+                # EQUIPOS/MANO_OBRA/TRANSPORTE: DESCRIPCION | CANTIDAD | TARIFA | COSTO HORA | RENDIMIENTO | COSTO
+                if len(cols) >= 2:
+                    sheet[f"{cols[1]}{current_row}"] = recurso.get("cantidad", "")
+                # Las demás columnas (TARIFA, COSTO HORA, etc.) pueden dejarse para cálculo manual
 
         return filas_insertadas
 

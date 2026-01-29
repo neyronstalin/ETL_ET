@@ -8,7 +8,7 @@ Extrae SOLO secciones específicas:
 Ignora: Definición, Procedimientos, Medición, Forma de pago, etc.
 """
 
-from src.etl_apu.extract_sections import (
+from .extract_sections import (
     RubroBlock,
     ResourceSection,
     detect_rubro_blocks,
