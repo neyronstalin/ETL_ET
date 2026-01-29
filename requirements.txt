@@ -1,0 +1,183 @@
+# ============================================
+# PIPELINE EXTRACCIÓN PDF - ESPECIFICACIONES TÉCNICAS
+# Python 3.11+
+# ============================================
+
+# ────────────────────────────────────────────
+# PDF INGESTION (Digital PDFs)
+# ────────────────────────────────────────────
+pdfplumber==0.11.0
+# Justificación: Mejor librería para PDFs digitales
+# - Extrae texto con layout awareness (posiciones, tablas)
+# - Soporta metadatos de páginas
+# - Excelente para detectar si un PDF tiene texto real o es imagen
+
+pypdf==3.17.4
+# Justificación: Fallback y manipulación de PDFs
+# - Lectura rápida de metadatos
+# - Extracción básica de texto
+# - Detección de páginas con/sin texto
+
+# ────────────────────────────────────────────
+# OCR (Scanned PDFs)
+# ────────────────────────────────────────────
+pytesseract==0.3.10
+# Justificación: Interface Python para Tesseract OCR
+# - OCR gratuito, robusto y maduro
+# - Excelente soporte para español (spa.traineddata)
+# - Configuración de PSM (page segmentation modes)
+# Requiere: Tesseract-OCR instalado en sistema
+
+easyocr==1.7.1
+# Justificación: OCR basado en deep learning (fallback/complemento)
+# - Mejor que Tesseract en textos difíciles o baja calidad
+# - Soporta múltiples idiomas out-of-the-box
+# - No requiere instalación externa (usa modelos pre-entrenados)
+# Nota: Primera ejecución descarga modelos (~100MB)
+
+pdf2image==1.17.0
+# Justificación: Conversión PDF → Imágenes para OCR
+# - Necesario para procesar PDFs escaneados con Tesseract/EasyOCR
+# - Usa Poppler internamente
+# Requiere: Poppler instalado (incluido en Windows builds)
+
+Pillow==10.2.0
+# Justificación: Procesamiento de imágenes
+# - Redimensionamiento antes de OCR (mejora accuracy)
+# - Conversión de formatos
+# - Mejora de contraste/brillo pre-OCR
+
+# ────────────────────────────────────────────
+# DATA VALIDATION & MODELS
+# ────────────────────────────────────────────
+pydantic==2.5.3
+# Justificación: Validación de datos y modelos tipados
+# - Contratos claros para Rubro, Recurso, ParseWarning
+# - Validación automática de tipos
+# - Serialización JSON para logging/debugging
+# - Type hints + runtime validation
+
+pydantic-settings==2.1.0
+# Justificación: Configuración tipada desde .env
+# - Gestión de settings (rutas Tesseract, thresholds, etc.)
+
+# ────────────────────────────────────────────
+# TEXT PROCESSING & PARSING
+# ────────────────────────────────────────────
+regex==2023.12.25
+# Justificación: Regex avanzado (mejor que 're' estándar)
+# - Soporte para Unicode categories (español con acentos)
+# - Fuzzy matching
+# - Named captures más potentes
+
+rapidfuzz==3.6.1
+# Justificación: Fuzzy matching de strings
+# - Matching de unidades con typos (ej: "m2" vs "m²" vs "m2.")
+# - Clasificación MATERIAL/EQUIPO por similitud
+# - Más rápido que fuzzywuzzy
+
+# ────────────────────────────────────────────
+# EXCEL EXPORT
+# ────────────────────────────────────────────
+pandas==2.1.4
+# Justificación: Manipulación de datos y export Excel
+# - DataFrames para estructurar Rubros/Recursos
+# - Export a Excel con múltiples hojas
+# - Validación de columnas
+
+openpyxl==3.1.2
+# Justificación: Motor Excel (usado por pandas)
+# - Escritura de .xlsx con formato
+# - Ajuste de anchos de columna
+# - Estilos y colores para warnings
+
+xlsxwriter==3.1.9
+# Justificación: Alternativa para Excel con más control de formato
+# - Opcional: si necesitamos formateo avanzado
+# - Mejor performance para archivos grandes
+
+# ────────────────────────────────────────────
+# LOGGING & MONITORING
+# ────────────────────────────────────────────
+structlog==24.1.0
+# Justificación: Logging estructurado (JSON logs)
+# - Trazabilidad: rubro_id, page, snippet en logs
+# - Integración con Pydantic models
+# - Mejor para debugging de parseo
+
+rich==13.7.0
+# Justificación: Pretty printing en consola/notebook
+# - Progress bars para procesamiento de páginas
+# - Tablas para mostrar resultados
+# - Syntax highlighting
+
+# ────────────────────────────────────────────
+# JUPYTER NOTEBOOK
+# ────────────────────────────────────────────
+jupyter==1.0.0
+# Justificación: Entorno Jupyter completo
+# - Notebook para pipeline interactivo
+
+ipykernel==6.28.0
+# Justificación: Kernel Python para Jupyter en VSCode
+# - Integración con VSCode Jupyter extension
+
+ipywidgets==8.1.1
+# Justificación: Widgets interactivos en notebooks
+# - File upload widget
+# - Progress bars
+
+# ────────────────────────────────────────────
+# TESTING
+# ────────────────────────────────────────────
+pytest==7.4.4
+# Justificación: Framework de testing
+# - Tests unitarios para parsers
+# - Fixtures para PDFs de prueba
+
+pytest-cov==4.1.0
+# Justificación: Coverage de tests
+# - Medir cobertura de código
+
+# ────────────────────────────────────────────
+# UTILITIES
+# ────────────────────────────────────────────
+python-dotenv==1.0.0
+# Justificación: Variables de entorno desde .env
+# - Configuración de rutas (Tesseract, data dirs)
+# - Secrets (si usamos APIs futuras)
+
+tqdm==4.66.1
+# Justificación: Progress bars
+# - Mostrar progreso de OCR página por página
+
+joblib==1.3.2
+# Justificación: Caching y paralelización
+# - Cache de resultados OCR por página
+# - Procesamiento paralelo de múltiples páginas
+
+# ────────────────────────────────────────────
+# TYPE CHECKING & LINTING (Desarrollo)
+# ────────────────────────────────────────────
+mypy==1.8.0
+# Justificación: Type checking estático
+# - Verificar tipos antes de runtime
+
+black==24.1.1
+# Justificación: Code formatter
+# - Estilo consistente
+
+ruff==0.1.14
+# Justificación: Linter ultra-rápido
+# - Reemplaza flake8, isort, etc.
+# - Detecta bugs comunes
+
+# ────────────────────────────────────────────
+# OPTIONAL: ML/NLP (Futuro)
+# ────────────────────────────────────────────
+# transformers==4.36.2
+# torch==2.1.2
+# Justificación: Si queremos usar LLMs para clasificación
+# - Clasificar MATERIAL vs EQUIPO con BERT
+# - Named Entity Recognition para extraer cantidades
+# - COMENTADO: Solo descomentar si se necesita

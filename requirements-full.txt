@@ -1,0 +1,215 @@
+# ============================================
+# PIPELINE EXTRACCIÓN PDF v1.1 - ADVANCED MODE
+# Python 3.11+
+# Includes: Docling, Marker, Embeddings, FAISS
+# ============================================
+
+# ────────────────────────────────────────────
+# BASE (from v1.0)
+# ────────────────────────────────────────────
+pdfplumber==0.11.0
+pypdf==3.17.4
+pytesseract==0.3.10
+pdf2image==1.17.0
+Pillow==10.2.0
+
+# Pydantic
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Parsing
+regex==2023.12.25
+rapidfuzz==3.6.1
+
+# Excel
+pandas==2.1.4
+openpyxl==3.1.2
+xlsxwriter==3.1.9
+
+# Logging
+structlog==24.1.0
+rich==13.7.0
+
+# Jupyter
+jupyter==1.0.0
+ipykernel==6.28.0
+ipywidgets==8.1.1
+
+# Testing
+pytest==7.4.4
+pytest-cov==4.1.0
+
+# Utilities
+python-dotenv==1.0.0
+tqdm==4.66.1
+joblib==1.3.2
+
+# Dev Tools
+mypy==1.8.0
+black==24.1.1
+ruff==0.1.14
+
+
+# ────────────────────────────────────────────
+# v1.1 NUEVAS DEPENDENCIAS - CONVERSIÓN ESTRUCTURADA
+# ────────────────────────────────────────────
+
+# Docling (primario) - IBM Document Understanding
+# NOTA Windows: Puede requerir Visual Studio Build Tools
+# Si falla instalación, usar marker-pdf como alternativa
+docling==1.16.2
+# Dependencias de docling:
+docling-core==1.8.0
+docling-ibm-models==1.2.0
+
+# Marker (fallback) - PDF to Markdown conversion
+# NOTA Windows: Funciona mejor que docling en la mayoría de casos
+marker-pdf==0.2.17
+
+# PyMuPDF4LLM (fallback rápido)
+# Basado en PyMuPDF (fitz), muy ligero
+pymupdf4llm==0.0.10
+PyMuPDF==1.23.26  # Dependencia de pymupdf4llm
+
+
+# ────────────────────────────────────────────
+# v1.1 NUEVAS DEPENDENCIAS - MATCHING SEMÁNTICO
+# ────────────────────────────────────────────
+
+# Sentence Transformers (embeddings multilingües)
+# NOTA: Descarga modelos (~500MB) en primera ejecución
+# Modelo recomendado: paraphrase-multilingual-MiniLM-L12-v2
+sentence-transformers==2.3.1
+
+# PyTorch (requerido por sentence-transformers)
+# NOTA Windows: Instalar versión CPU (más ligera)
+# Opción 1: CPU only (recomendado para Windows)
+torch==2.1.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+# Opción 2: Si tienes GPU CUDA
+# torch==2.1.2+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
+
+# FAISS (búsqueda vectorial rápida)
+# NOTA Windows: faiss-cpu funciona bien
+faiss-cpu==1.7.4
+# Si quieres GPU: faiss-gpu==1.7.4 (requiere CUDA)
+
+# Transformers (dependencia de sentence-transformers)
+transformers==4.36.2
+
+# Tokenizers (dependencia de transformers)
+tokenizers==0.15.0
+
+# Hugging Face Hub (descarga de modelos)
+huggingface-hub==0.20.2
+
+
+# ────────────────────────────────────────────
+# v1.1 NUEVAS DEPENDENCIAS - PROCESAMIENTO AVANZADO
+# ────────────────────────────────────────────
+
+# NumPy (arrays, embeddings)
+numpy==1.26.3
+
+# Scikit-learn (cosine similarity, normalización)
+scikit-learn==1.4.0
+
+# Tabulate (formateo de tablas en MD reports)
+tabulate==0.9.0
+
+# Markdown (generación y parsing de MD)
+markdown==3.5.2
+
+# python-magic (detección de tipo de archivo)
+# NOTA Windows: Requiere libmagic, puede ser problemático
+# OPCIONAL: Comentar si da problemas
+python-magic==0.4.27
+# Alternativa Windows: python-magic-bin==0.4.14
+
+
+# ────────────────────────────────────────────
+# v1.1 NUEVAS DEPENDENCIAS - EXCEL AVANZADO
+# ────────────────────────────────────────────
+
+# Openpyxl ya incluido en base
+# XlsxWriter ya incluido en base
+
+# Openpyxl-templates (para templates avanzados)
+# OPCIONAL: Si queremos templates más complejos
+# openpyxl-templates==0.2.5
+
+
+# ────────────────────────────────────────────
+# v1.1 NUEVAS DEPENDENCIAS - TESTING FIXTURES
+# ────────────────────────────────────────────
+
+# ReportLab (generar PDFs sintéticos para tests)
+reportlab==4.0.9
+
+# Faker (datos sintéticos)
+faker==22.6.0
+
+# Pytest-mock (mocking)
+pytest-mock==3.12.0
+
+
+# ────────────────────────────────────────────
+# OPCIONALES (para features avanzados)
+# ────────────────────────────────────────────
+
+# EasyOCR (ya incluido en v1.0, opcional)
+# easyocr==1.7.1
+
+# Unstructured (alternativa a Docling)
+# OPCIONAL: Solo si Docling y Marker fallan
+# unstructured==0.12.0
+# unstructured[pdf]==0.12.0
+
+# OCRmyPDF (pre-procesamiento de PDFs escaneados)
+# OPCIONAL: Mejora calidad de OCR
+# ocrmypdf==16.0.4
+
+# PDF2Text (alternativa simple)
+# OPCIONAL: Para PDFs muy simples
+# pdftotext==2.2.2
+
+# SpaCy (NLP avanzado)
+# OPCIONAL: Para NER (Named Entity Recognition)
+# spacy==3.7.2
+# python -m spacy download es_core_news_sm
+
+
+# ────────────────────────────────────────────
+# NOTAS DE INSTALACIÓN WINDOWS
+# ────────────────────────────────────────────
+
+# ORDEN DE INSTALACIÓN RECOMENDADO:
+# 1. pip install --upgrade pip setuptools wheel
+# 2. pip install torch==2.1.2+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+# 3. pip install -r requirements-full.txt
+#
+# SI DOCLING FALLA:
+# - Instalar Visual Studio Build Tools 2022
+# - O comentar docling y usar solo marker-pdf
+#
+# SI PYTHON-MAGIC FALLA:
+# - pip install python-magic-bin==0.4.14 (versión Windows)
+# - O comentar python-magic
+#
+# CACHE DE MODELOS:
+# - sentence-transformers: ~/.cache/torch/sentence_transformers/
+# - huggingface: ~/.cache/huggingface/
+# - Total: ~1-2 GB (primera descarga)
+#
+# PERFORMANCE:
+# - torch CPU: suficiente para <1000 rubros
+# - faiss-cpu: rápido hasta 10,000 vectores
+# - Si necesitas GPU: instalar torch+cu118 y faiss-gpu
+
+
+# ────────────────────────────────────────────
+# COMPATIBILIDAD
+# ────────────────────────────────────────────
+# Python: 3.11.x (recomendado: 3.11.8)
+# Sistema: Windows 10/11, Linux, macOS
+# RAM: Mínimo 8GB (recomendado: 16GB para embeddings)
+# Disco: ~5GB (incluye modelos, cache, venv)
